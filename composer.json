@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Recklessio_Prediction",
+    "type": "magento-module",
+    "license": "GNU-General-Public-License-(GPL)",
+    "homepage": "",
+    "description": "Magento Prediction Machine Learning System",
+    "authors": [
+    {
+        "name": "Reckless",
+        "email": "hello@reckless.io"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

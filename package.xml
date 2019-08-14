@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+    <name>Recklessio_Prediction</name>
+    <version>1.0.1</version>
+    <stability>stable</stability>
+    <license>GNU General Public License (GPL)</license>
+    <channel>community</channel>
+    <extends/>
+    <summary>Magento Prediction Machine Learning System</summary>
+    <description>This Magento extension learns from your historic Magento operational data and predicts whether a given online customer or guest will checkout or not. We use external variables like holidays, weather etc. in our models.&#xD;
+&#xD;
+Depending on the predicted checkout intent (Y/N), a promo code can be generated to either convert the customer and reduce another abandoned cart or to increase his average order value.&#xD;
+</description>
+    <notes>- First version&#xD;
+- Works for both logged in(registered) and guest customers&#xD;
+- Promotion Budget control with Coupon validity Days and maximum limit&#xD;
+- Customizable messages, coupon code/ discount percent/ and other basic configurations</notes>
+    <authors><author><name>Reckless</name><user>recklessio</user><email>hello@reckless.io</email></author></authors>
+    <date>2014-06-30</date>
+    <time>18:26:45</time>
+    <contents><target name="magelocal"><dir name="Reckless"><dir name="Prediction"><dir name="Block"><dir name="Adminhtml"><dir name="Customer"><dir name="Online"><file name="Grid.php" hash="6be15ebd43a6f04c56c77735429d618d"/></dir></dir><file name="Grid.php" hash="594b39a6b04566f12b520ea4188938d2"/><dir name="Predictions"><file name="Grid.php" hash="3aaee4a1b20597f77d4ed697913071f3"/></dir><file name="Predictions.php" hash="492539cb45eea7c1157dc86b253afa2a"/><dir name="Redemptions"><file name="Grid.php" hash="89fe19b650d14f595dd1f7a53484c4b1"/></dir><file name="Redemptions.php" hash="7e00d2e4b98b819b9662605009b0a23c"/></dir></dir><dir name="Helper"><file name="Data.php" hash="f7bc89cf9f9eaa4b336595292dbaba86"/></dir><dir name="Model"><dir name="Promotion"><file name="Observer.php" hash="622782d27dbcc6aa574b768f99714787"/></dir><file name="Promotions.php" hash="c4daffe562c0c275ce557ee151c09857"/><dir name="Resource"><dir name="Promotions"><file name="Collection.php" hash="25eb76955e8ebc45196143449394cd11"/></dir><file name="Promotions.php" hash="abb8647d9872b0db04687eac0acb8cc2"/><file name="Setup.php" hash="c711d1e3a93c01fe04dd668203a4fe0e"/></dir></dir><dir name="controllers"><dir name="Adminhtml"><file name="PredictionController.php" hash="fab9e8f6a6038cdb9b6afd67a1a87b4f"/></dir></dir><dir name="data"><dir name="reckless_prediction_setup"><file name="data-install-0.1.0.php" hash="358f68c28d18f02af84fee4b1b11691a"/></dir></dir><dir name="etc"><file name="adminhtml.xml" hash="190aa60726698e82c99983eb533e119b"/><file name="config.xml" hash="33919d473722f72c26be0015a7c867e8"/><file name="system.xml" hash="9545d30dcfc88d7e194fc40f54d47ed6"/></dir><dir name="sql"><dir name="reckless_prediction_setup"><file name="mysql4-install-0.1.0.php" hash="f058cf3da3900069ee364d5ed211390d"/></dir></dir></dir></dir></target><target name="mageetc"><dir name="modules"><file name="Reckless_Prediction.xml" hash="2b822e3b624ed0437395ee8ee9ab7190"/></dir></target></contents>
+    <compatible/>
+    <dependencies><required><php><min>5.2.0</min><max>6.0.0</max></php><package><name>Mage_Core_Modules</name><channel>community</channel><min>1.0.0.0</min><max>1.9</max></package></required></dependencies>
+</package>
