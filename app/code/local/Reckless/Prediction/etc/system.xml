@@ -50,7 +50,7 @@
                             <label>Enable Customer Email Sync</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <comment><![CDATA[If enabled, Customer emails will be used for analysis. If disabled, only customer id will be used. Default: Enabled]]></comment>
+                            <comment><![CDATA[*** For this version, ONLY Customer ID will be used. If enabled, Customer emails will be used for analysis. If disabled, only customer id will be used. Default: Disabled]]></comment>
                             <sort_order>40</sort_order>
                             <show_in_default>1</show_in_default>
                         </reckless_prediction_sync_customer_email>
@@ -101,6 +101,13 @@
                             <comment><![CDATA[*** DO NOT USE. Feature not enabled in this version. Maximum promotions budget for Reckless to Giveaway in a 24 hour period. Default: 10 GBP]]></comment>
                             <show_in_default>1</show_in_default>
                         </reckless_prediction_promotion_threshould>
+                        <reckless_prediction_promocodevalid_starts_from>
+                            <label>Promotion Code Validity Starts in (days)</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>30</sort_order>
+                            <comment><![CDATA[When should the promotion code be valid from. Default: 0 (days) which is immediately]]></comment>
+                            <show_in_default>1</show_in_default>
+                        </reckless_prediction_promocodevalid_starts_from>
                         <reckless_prediction_promocodevalid_time>
                             <label>Promotion Code Validity (days)</label>
                             <frontend_type>text</frontend_type>
@@ -108,11 +115,19 @@
                             <comment><![CDATA[The time limit for the dynamically generated promocode from Created Date.Default: 60 Days]]></comment>
                             <show_in_default>1</show_in_default>
                         </reckless_prediction_promocodevalid_time>
+                        <reckless_dynamic_promotion_discount_type>
+                            <label>Coupon Discount is Percentage of Current Cart</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <comment><![CDATA[If enabled, Coupon Value will be a percentage of current cart value. If disabled, coupon code will offer a percentage off in the next cart. Default: Disabled]]></comment>
+                            <sort_order>35</sort_order>
+                            <show_in_default>1</show_in_default>
+                        </reckless_dynamic_promotion_discount_type>
                         <reckless_prediction_promocode_percent>
                             <label>Percentage Discount</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>40</sort_order>
-                            <comment><![CDATA[Discount Percentage for Promo Code.Default: 5%]]></comment>
+                            <comment><![CDATA[Discount Percentage for Promo Code; either on current cart value for future checkout OR percentage off in the next checkout. This is driven by the above configuration. Default: 5%]]></comment>
                             <show_in_default>1</show_in_default>
                         </reckless_prediction_promocode_percent>
                         <reckless_prediction_promocode_desc>
@@ -159,13 +174,20 @@
                             <comment><![CDATA[Stop Further Rules from Processing.Default: Disabled]]></comment>
                             <show_in_default>1</show_in_default>
                         </reckless_prediction_promocode_stoprulesprocessing>
-                        <reckless_prediction_customer_promo_message>
-                        	<label>Message to show to customer</label>
+                        <reckless_prediction_customer_promo_message_yes>
+                            <label>Message for Predicted Checkout: YES</label>
                             <frontend_type>textarea</frontend_type>
-                            <sort_order>80</sort_order>
-                            <comment><![CDATA[Message that will be displayed to the customer in the view cart page. The coupon code will always be the last word in the sentence. Default: Thank you for choosing us. As a token of appreciation, we would like to offer you 5% off next time. Please use code: {Coupon Code}]]></comment>
+                            <sort_order>110</sort_order>
+                            <comment><![CDATA[Message that will be displayed to the customer in the view cart page if the predicted checkot intent is YES. The coupon code will always be the last word in the sentence. Default: Thank you for choosing us. As a token of appreciation, we would like to offer you 5% off next time. Please use code: {Coupon Code}]]></comment>
                             <show_in_default>1</show_in_default>
-                        </reckless_prediction_customer_promo_message>
+                        </reckless_prediction_customer_promo_message_yes>
+                        <reckless_prediction_customer_promo_message_no>
+                            <label>Message for Predicted Checkout: NO</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>120</sort_order>
+                            <comment><![CDATA[Message that will be displayed to the customer in the view cart page if the predicted checkot intent is NO. The coupon code will always be the last word in the sentence. Default: Thank you for choosing us. As a token of appreciation, we would like to offer you 5% off next time. Please use code: {Coupon Code}]]></comment>
+                            <show_in_default>1</show_in_default>
+                        </reckless_prediction_customer_promo_message_no>
                     </fields>
                 </reckless_promotions_section>
             </groups>

@@ -6,7 +6,7 @@ $domain = parse_url($baseurl, PHP_URL_HOST);
 $apikey = md5($domain);
 
 //Mage::log("\n BaseURL: " . $baseurl . ". Domain: " .  $domain . " Hash: " . md5($domain));
-$curl_url = "http://javi-awesome-bi.appspot.com/machinelearning/create/"
+$curl_url = "http://app.reckless.io/machinelearning/create/"
     . $domain
     . "/"
     . $apikey

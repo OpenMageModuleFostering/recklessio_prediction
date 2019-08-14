@@ -13,7 +13,7 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
     public static $errorLogFile = "";
     public static $emailMessage = "";
 
-    const RECKLESS_SERVER_URL = 'http://javi-awesome-bi.appspot.com/machinelearning/%s/%s/%s/';
+    const RECKLESS_SERVER_URL = 'http://app.reckless.io/machinelearning/%s/%s/%s/';
     const TEMP_TRAINING_CSV_FILENAME = "reckless-training-set-v1.csv";
     const MAX_NUM_ITEMS = 1000;
 
@@ -97,8 +97,6 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
             // Delta to filter the collection
             $lastProcessed = Mage::helper('reckless_prediction')->getLastProcessedQuoteId();
             $quote_collection->addFieldToFilter('entity_id', array('gt' => $lastProcessed));
-            // Avoid processing too
-            $quote_collection->addFieldToFilter('entity_id', array('gt' => $lastProcessed));
         }
 
         $quote_collection->getSelect()->limit(self::MAX_NUM_ITEMS);
@@ -111,7 +109,9 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
                 $quote->getBaseSubtotal() - $quote->getBaseSubtotalWithDiscount(),
                 $quote->getBaseGrandTotal(),
                 $quote->getItemsQty(),
-                $quote->getCustomerIsGuest()
+                $quote->getCustomerIsGuest(),
+                $quote->getBaseCurrencyCode(),
+                $quote->getGlobalCurrencyCode()
             );
             if ($id) {
                 $data[sizeof($data) - 1][] = $quote->getEntityId();
@@ -121,6 +121,7 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
         if (isset($lastProcessed) && isset($quote)) {
             Mage::helper('reckless_prediction')->setLastProcessedQuoteId($quote->getEntityId());
         }
+
         return $data;
     }
 
@@ -146,13 +147,16 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
                 $order->getBaseDiscountInvoiced(),
                 $order->getBaseGrandTotal(),
                 $order->getTotalQtyOrdered(),
-                $order->getCustomerIsGuest()
+                $order->getCustomerIsGuest(),
+                $order->getBaseCurrencyCode(),
+                $order->getGlobalCurrencyCode()
             );
         }
         // Update delta
         if (isset($order)) {
             Mage::helper('reckless_prediction')->setLastProcessedOrderId($order->getEntityId());
         }
+
         return $data;
     }
 
@@ -235,6 +239,7 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
             ->prepare()
             ->getCollection();
         $onlineCustomersCollection->getSelect()->joinLeft(array('log_quote'=> 'log_quote'), 'log_quote.visitor_id = main_table.visitor_id', array('log_quote.quote_id'));
+
         return $onlineCustomersCollection;
     }
 
@@ -271,13 +276,14 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
 
     }
 
-    private function createCouponCode($discount_percent, $store, $customer)
+    private function createCouponCode($discount_percent, $store, $customer, $quoteValue)
     {
-        $couponCode = Mage::helper('reckless_prediction')->createCouponCode($discount_percent, null, $customer);
+        $couponCode = Mage::helper('reckless_prediction')->createCouponCode($discount_percent, null, $customer, $quoteValue);
+
         return $couponCode;
     }
 
-    private function updatePredictionModel($customer, $checkoutIntent, $quoteId, $predictedDiscountPercent)
+    private function updatePredictionModel($customer, $checkoutIntent, $quoteId, $predictedDiscountPercent, $quoteValue)
     {
         //Check if a record exist for the customer
         //If yes, Update the record
@@ -285,6 +291,24 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
         $collections = Mage::getModel('prediction/promotions')
             ->getCollection()
             ->addFieldToFilter('quote_id', $quoteId);
+
+        //Get the AOV and LTV and TotalSales for the customer
+        //Refactor to Magento Models later
+        $aov_global_currency = 0;
+        $ltv_global_currency = 0;
+        $total_orders = 0;
+
+        if ($customer->getCustomerId() != NULL) {
+            $readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
+            $query = 'select customer_id, base_grand_total*base_to_global_rate as ltv_global , (base_grand_total*base_to_global_rate)/count(customer_id) as aov_global, count(customer_id) as total_orders from sales_flat_order where customer_id=' . $customer->getCustomerId();
+            $results = $readConnection->fetchAll($query);
+            $aov_global_currency=$results[0]['aov_global'];
+            $ltv_global_currency=$results[0]['ltv_global'];
+            $total_orders=$results[0]['total_orders'];
+        }
+
+
+        $currentTimestamp = Mage::getModel('core/date')->timestamp(time());;
 
         //If no record
         if ($collections->count() < 1) {
@@ -296,7 +320,12 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
                 ->setSessionId($this->getSessionID($customer->getVisitorId()))
                 ->setCheckoutIntent($checkoutIntent)
                 ->setDiscountPercent($predictedDiscountPercent)
-                ->setCouponCode($this->createCouponCode($predictedDiscountPercent, null, $customer))
+                ->setCouponCode($this->createCouponCode($predictedDiscountPercent, null, $customer, $quoteValue))
+                ->setAovGlobal($aov_global_currency)
+                ->setLtvGlobal($ltv_global_currency)
+                ->setTotalOrders($total_orders)
+                ->setCreatedAt($currentTimestamp)
+                ->setUpdatedAt($currentTimestamp)
                 ->save();
 
         } else {
@@ -305,11 +334,15 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
             foreach ($collections as $promo) {
                 $promo->setVisitorId($customer->getVisitorId());
                 $promo->setCheckoutIntent($checkoutIntent);
+                $promo->setAovGlobal($aov_global_currency);
+                $promo->setLtvGlobal($ltv_global_currency);
+                $promo->setTotalOrders($total_orders);
+                $promo->setUpdatedAt($currentTimestamp);
                 if ($predictedDiscountPercent != $promo->getDiscountPercent()) {
                     //delete old code
                     //create a new code
                     Mage::helper('reckless_prediction')->deleteCouponCode($promo->getCouponCode());
-                    $promo->setCouponCode($this->createCouponCode($predictedDiscountPercent, null, $customer));
+                    $promo->setCouponCode($this->createCouponCode($predictedDiscountPercent, null, $customer, $quoteValue));
                 }
 
                 $promo->save();
@@ -323,16 +356,21 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
         //Process all Quotes and predict a checkout intent
         foreach ($customerQuotes as $customerQuote) {
             try {
+
                 $quoteId = $customerQuote[sizeOf($customerQuote) -1];
                 unset($customerQuote[sizeOf($customerQuote) -1]);
+
+                $quoteValue = $customerQuote[sizeOf($customerQuote) - 5];
+
                 //Step 2: Predict Y/N checkout
                 $checkoutIntent = $this->getCheckoutIntent($customerQuote);
                 //Step 3: Record prediction in DB
-                $this->updatePredictionModel($customer, $checkoutIntent, $quoteId, Mage::helper('reckless_prediction')->getCouponDiscountPercent());
+                $this->updatePredictionModel($customer, $checkoutIntent, $quoteId, Mage::helper('reckless_prediction')->getCouponDiscountPercent() , $quoteValue);
                 $this->log("Customer: " . $customerCtr . ", Quote " . $quoteId . ", Visitor ID : " . $customer->getVisitorId() . ", CustomerId: " . $customer->getCustomerId() . ", Session ID: " . $sessionId . ", Checkout Intent: " . $checkoutIntent);
 
             } catch (Exception $e) {
                 $this->sendAlertEmail("Error: Reckless Data Predicting", $e->getTraceAsString());
+                Mage::logException($e);
             }
         }
     }
@@ -354,7 +392,7 @@ class Reckless_Prediction_Model_Promotions extends Mage_Core_Model_Abstract
             if ($customer->getQuoteId()) {
                 $this->log($customer->getQuoteId());
                 $customerQuotes = $this->getUnsuccessfulCheckouts($customer->getQuoteId());
-            } else if ($customer->getCustomerId()) {
+            } elseif ($customer->getCustomerId()) {
                 // Attempt to fetch the quote for the logged customer
                 $customerQuotes = $this->getUnsuccessfulCheckouts($customer->getCustomerId(), 'customer_id');
             }

@@ -21,13 +21,19 @@ class Reckless_Prediction_Model_Promotion_Observer
                 ->getCollection()
                 ->addFieldToFilter('session_id', session_id());
             foreach ($collection as $discount) {
-                Mage::getSingleton('core/session')->addNotice(
-                    Mage::helper('reckless_prediction')->getCustomerPromoMessage() . ' ' . $discount->getCouponCode()
-                );
+                if (strcasecmp($discount->getCheckoutIntent(),'Y') == 0) {
+                    Mage::getSingleton('core/session')->addNotice(
+                        Mage::helper('reckless_prediction')->getCustomerPromoMessageYES() . ' ' . $discount->getCouponCode()
+                    );
+                } else {
+                    Mage::getSingleton('core/session')->addNotice(
+                        Mage::helper('reckless_prediction')->getCustomerPromoMessageNO() . ' ' . $discount->getCouponCode()
+                    );
+                }
                 Mage::getSingleton('core/session')->setPromotionShowed(true);
             }
-            $this->log("**********Observer Called for event : checkout_cart_add_product_complete");
         }
+
         return $this;
     }
 

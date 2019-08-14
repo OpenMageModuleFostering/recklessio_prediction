@@ -26,14 +26,17 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
     const RECKLESS_PROMOTIONS_ENABLED    = 'reckless_prediction/reckless_promotions_section/reckless_dynamic_promotion_enable';
     const RECKLESS_PRMOTIONS_THRESHOLD     = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promotion_threshould';
     const RECKLESS_PROMOTIONS_VAILDITY     = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocodevalid_time';
+    const RECKLESS_PROMOTIONS_VAILDITY_STARTSFROM     = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocodevalid_starts_from';
     const RECKLESS_PROMOTIONS_STOPRULESPROCESSING     = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_stoprulesprocessing';
     const RECKLESS_PROMOTIONS_COUPONTYPE    = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_type';
     const RECKLESS_PROMOTIONS_USAGEPERCUSTOMER   = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_usagepercustomer';
     const RECKLESS_PROMOTIONS_COUPONUSAGE    = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_usage';
     const RECKLESS_PROMOTIONS_COUPONPREFIX    = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_prefix';
     const RECKLESS_PROMOTIONS_COUPONDESC    = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_desc';
+    const RECKLESS_PROMOTIONS_COUPONDESC_TYPE    = 'reckless_prediction/reckless_promotions_section/reckless_dynamic_promotion_discount_type';
     const RECKLESS_PROMOTIONS_COUPONDISCPERCENT    = 'reckless_prediction/reckless_promotions_section/reckless_prediction_promocode_percent';
-    const RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE = 'reckless_prediction/reckless_promotions_section/reckless_prediction_customer_promo_message';
+    const RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE_YES = 'reckless_prediction/reckless_promotions_section/reckless_prediction_customer_promo_message_yes';
+    const RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE_NO = 'reckless_prediction/reckless_promotions_section/reckless_prediction_customer_promo_message_no';
 
     /**
      * Check if Reckless Module is enabled
@@ -44,6 +47,11 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
     public function isRecklessModuleEnabled()
     {
         return (bool) Mage::getStoreConfig(self::RECKLESS_CORE_ENABLED);
+    }
+
+    public function isPromoCodeValueAPercentOfCurrentCart()
+    {
+        return (bool) Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_COUPONDESC_TYPE);
     }
 
     /**
@@ -199,6 +207,21 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
+     * Get Promotion Valifity Start From
+     * Defaut: 0 Days (Immediately which is Today)
+     * @return  string
+     * @author  Dhruv Boruah <hello@reckless.io>
+     */
+    public function getPromotionValidityStartFrom()
+    {
+        if (strlen(Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_VAILDITY_STARTSFROM)) == 0) {
+            return 0;
+        } else {
+            return Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_VAILDITY_STARTSFROM);
+        }
+    }
+
+    /**
      * Method to send notification emails
      * @param unknown_type $sendToName
      * @param unknown_type $sendToEmail
@@ -267,28 +290,55 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
         }
     }
 
-	public function getCouponPostfix($customer){
-		if ($customer->getCustomerId() == NULL)
-			return "G";
-		return $customer->getCustomerId();
-	}
+    public function getCouponPostfix($customer)
+    {
+        if ($customer->getCustomerId() == NULL) {
+            return "G";
+        }
+        return $customer->getCustomerId();
+    }
+
+    public function getCouponAction()
+    {
+        if($this->isPromoCodeValueAPercentOfCurrentCart()) {
+            return 'cart_fixed';
+        } else {
+            return 'by_percent';
+        }
+    }
+
+    public function getCouponValue($quoteValue)
+    {
+        Mage::log("Getting Coupon Value Total " . $quoteValue);
+        if ($this->isPromoCodeValueAPercentOfCurrentCart()) {
+            return ($quoteValue * $this->getCouponDiscountPercent()) / 100;
+        } else
+
+            return min(100, $this->getCouponDiscountPercent());
+    }
     /*
      * Function to create
      *		a) Promotion Rule and
      * 		b) coupon codes for Old and New Magento Versions
      */
 
-    public function createCouponCode($discount_percent, $store, $customer)
+    public function createCouponCode($discount_percent, $store, $customer, $quoteValue)
     {
+        //$discount_percent : Not used in current prediction model
+
         $coupon= $this->getCouponPrefix() . Mage::helper('core')->getRandomString(4) . "-" . $this->getCouponPostfix($customer);
         Mage::log("Creating Coupon " . $coupon);
         $model = $this->getRuleModel();
 
         $now = new DateTime('NOW');
-        $couponValidFromDate = new DateTime();
-        $couponValidFromDate = $now->format(DateTime::ISO8601);
+        $couponValidFromDate = new DateTime('NOW');
+        $couponValidFromDate->add(new DateInterval('P' . $this->getPromotionValidityStartFrom() . 'D'));
+        $couponValidFromDate = $couponValidFromDate->format(DateTime::ISO8601);
+
         $intervalToAdd = "P" . $this->getPromotionValidity()  . "D";// Days
         $couponValidToDate = $now->add(new DateInterval($intervalToAdd));
+
+           $discount_amount = 0;
 
         try {
 
@@ -296,17 +346,13 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
 
                 $rule = Mage::getModel('salesrule/rule')
                     ->setName($coupon)
-                    ->setDescription($this->getCouponDescription() . $customer->getCustomerId())
+                    ->setDescription($this->getCouponDescription() . $this->getCouponAction() . $customer->getCustomerId())
                     ->setFromDate(date($couponValidFromDate))
                     ->setToDate($couponValidToDate->format('Y-m-d H:i:s'))
                     ->setCustomerGroupIds($this->getCustomerGroups())
                     ->setIsActive(1)
-                    //->setStopRulesProcessing
-                    //->setIsAdvanced
-                    ->setSimpleAction('by_percent')
-                    ->setDiscountAmount(min(100, $this->getCouponDiscountPercent()))
-                    //->setDiscountQty
-                    //->setDiscountStep
+                    ->setSimpleAction($this->getCouponAction())
+                    ->setDiscountAmount($this->getCouponValue($quoteValue))
                     ->setStopRulesProcessing($this->getStopRulesProcessing())
                     ->setUseAutoGeneration(0)
                     ->setIsRss(1)
@@ -325,16 +371,16 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
             } else {
                 $model
                     ->setName($coupon)
-                    ->setDescription($this->getCouponDescription() . $customer->getCustomerId())
+                    ->setDescription($this->getCouponDescription() . $this->getCouponAction() . $customer->getCustomerId())
                     ->setFromDate(date($couponValidFromDate))
                     ->setCouponCode($coupon)
                     ->setToDate($couponValidToDate->format('Y-m-d H:i:s'))
                     ->setCustomerGroupIds($this->getCustomerGroups())
                     ->setIsActive(1)
-                    ->setSimpleAction('by_percent')
-					->setUseAutoGeneration(0)
+                    ->setSimpleAction($this->getCouponAction())
+                    ->setUseAutoGeneration(0)
                     ->setWebsiteIds($this->getAllWebsites())
-                    ->setDiscountAmount(min(100, $this->getCouponDiscountPercent()))
+                    ->setDiscountAmount($this->getCouponValue($quoteValue))
                     ->setStopRulesProcessing($this->getStopRulesProcessing())
                     ->setIsRss(1)
                     ->setUsesPerCoupon($this->getMaxCouponUsage())
@@ -478,8 +524,14 @@ class Reckless_Prediction_Helper_Data extends Mage_Core_Helper_Abstract
     {
         Mage::getModel('core/config')->saveConfig(self::RECKLESS_CORE_LAST_QUOTE, $id);
     }
-    
-    public function getCustomerPromoMessage(){
-    	    return Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE);
+
+    public function getCustomerPromoMessageYES()
+    {
+            return Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE_YES);
+    }
+
+    public function getCustomerPromoMessageNO()
+    {
+            return Mage::getStoreConfig(self::RECKLESS_PROMOTIONS_CUSTOMER_PROMO_MESSAGE_NO);
     }
 }

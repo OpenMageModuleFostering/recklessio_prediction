@@ -15,11 +15,14 @@ class Reckless_Prediction_Block_Adminhtml_Predictions_Grid extends Mage_Adminhtm
             ->getCollection();
 
         $this->setCollection($collection);
+
         return parent::_prepareCollection();
     }
 
     protected function _prepareColumns()
     {
+        $currencyCode = Mage::app()->getBaseCurrencyCode();
+
         $this->addColumn(
             'entity_id',
             array(
@@ -74,6 +77,34 @@ class Reckless_Prediction_Block_Adminhtml_Predictions_Grid extends Mage_Adminhtm
             )
         );
         $this->addColumn(
+            'aov_global',
+            array(
+                'header' => 'Average Order Value',
+                'align' =>'left',
+                'type'  => 'price',
+                'currency_code' => $currencyCode,
+                'index' => 'aov_global',
+            )
+        );
+        $this->addColumn(
+            'ltv_global',
+            array(
+                'header' => 'LifeTime Value',
+                'align' =>'left',
+                'type'  => 'price',
+                'currency_code' => $currencyCode,
+                'index' => 'ltv_global',
+            )
+        );
+        $this->addColumn(
+            'total_orders',
+            array(
+                'header' => 'Total Orders',
+                'align' =>'left',
+                'index' => 'total_orders',
+            )
+        );
+        $this->addColumn(
             'created_at',
             array(
                 'header' => 'Created At',
@@ -86,6 +117,7 @@ class Reckless_Prediction_Block_Adminhtml_Predictions_Grid extends Mage_Adminhtm
 
         $this->addExportType('*/*/exportPredictionsCsv', 'CSV');
         $this->addExportType('*/*/exportPredictionsExcel', 'Excel');
+
         return parent::_prepareColumns();
     }
 }

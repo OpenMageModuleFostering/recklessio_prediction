@@ -3,7 +3,7 @@
     "type": "magento-module",
     "license": "GNU-General-Public-License-(GPL)",
     "homepage": "",
-    "description": "Magento Prediction Machine Learning System",
+    "description": "Use machine learning to predict if a customer will checkout and take an action before the cart abandonment.",
     "authors": [
     {
         "name": "Reckless",
