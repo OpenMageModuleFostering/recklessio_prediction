@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Reckless_Prediction>
-            <version>0.1.1</version>
+            <version>1.2.0</version>
         </Reckless_Prediction>
     </modules>
     <global>
@@ -69,14 +69,14 @@
     <default>
         <reckless_prediction>
             <reckless_prediction_section>
-                <reckless_prediction_enable>0</reckless_prediction_enable>
+                <reckless_prediction_enable>1</reckless_prediction_enable>
                 <reckless_prediction_sync_customer_email>0</reckless_prediction_sync_customer_email>
                 <reckless_prediction_notificationemail>hello@reckless.io</reckless_prediction_notificationemail>
                 <reckless_prediction_enablelog>1</reckless_prediction_enablelog>
                 <reckless_prediction_logfilename>reckless_prediction.log</reckless_prediction_logfilename>
             </reckless_prediction_section>
             <reckless_promotions_section>
-                <reckless_dynamic_promotion_enable>0</reckless_dynamic_promotion_enable>
+                <reckless_dynamic_promotion_enable>1</reckless_dynamic_promotion_enable>
                 <reckless_prediction_promotion_threshould>10</reckless_prediction_promotion_threshould>  <!-- Value in Base Currency Of the Store -->
                 <reckless_prediction_promocodevalid_time>60</reckless_prediction_promocodevalid_time> <!-- In Days, Default: 60 Days -->
                 <reckless_prediction_promocodevalid_starts_from>0</reckless_prediction_promocodevalid_starts_from> <!-- In days, Defaule : 0 which is The same day" -->
