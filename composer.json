@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Recklessio_Prediction",
+    "name": "OpenMageModuleFostering\/Recklessio_Prediction",
     "type": "magento-module",
     "license": "GNU-General-Public-License-(GPL)",
     "homepage": "",
     "description": "Use machine learning to predict if a customer will checkout and take an action before the cart abandonment.",
     "authors": [
-    {
-        "name": "Reckless",
-        "email": "hello@reckless.io"
-    }
-],
+        {
+            "name": "Reckless",
+            "email": "hello@reckless.io"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
